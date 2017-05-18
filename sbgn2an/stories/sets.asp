@@ -40,6 +40,9 @@ good(X,E):-edge(Y,X,E);gather(X,Y);inStory(X).
 :-gather(X,Y);edge(Z,X,E);edge(W,Y,E);X!=Y.
 
 %constraint (v)
-1 {cand(L,X):labeled(X,L)} 1:-hasLabel(X);epn(X).
-sameLabel(X,Y):-cand(L,Y);cand(L,X);epn(X);epn(Y);X!=Y.
-:-not sameLabel(X,Y);gather(X,Y);epn(X);epn(Y);X!=Y.
+%1 {cand(L,X):labeled(X,L)} 1:-hasLabel(X);epn(X).
+%sameLabel(X,Y):-cand(L,Y);cand(L,X);epn(X);epn(Y);X!=Y.
+%:-not sameLabel(X,Y);gather(X,Y);epn(X);epn(Y);X!=Y.
+
+c5(X):-labeled(Y,L):gather(X,Y);labeled(X,L);gather(X,_);labeled(_,L).
+:-not c5(X);gather(X,_).

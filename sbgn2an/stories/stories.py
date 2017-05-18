@@ -54,8 +54,8 @@ class SetsControl(object):
         if stories is not None:
             for story in stories:
                 for i in range(len(stories) - 1):
-                    ctrl.add("base", [], "gather({0},{1}).".format(story[i], story[i+1]))
-                ctrl.add("base", [], "gather({0},{1}).".format(story[-1], story[0]))
+                    self.ctrl.add("base", [], "gather({0},{1}).".format(story[i], story[i+1]))
+                self.ctrl.add("base", [], "gather({0},{1}).".format(story[-1], story[0]))
         if max_epn:
             self.ctrl.load(sbgn2an.config.MAX_FILE)
             self.ctrl.conf.solve.opt_mode = "optN"
