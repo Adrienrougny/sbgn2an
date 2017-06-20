@@ -1,0 +1,409 @@
+#!/usr/bin/env python3
+# vi:et
+
+import itertools
+
+from sbgn2an.utils.sbgnlib import *
+from sbgn2an.utils.dnf import *
+
+class AN(dict):
+    def __init__(self):
+        dict.__init__(self)
+        self.comments = {}
+        self.initial_state = []
+        self.states = {}
+
+    def register_automaton(self, name, states, comment=None):
+        self[name] = dict([(s, []) for s in states])
+        self.states[name] = states
+        if comment:
+            self.comments[name] = comment
+
+    def register_transition(self, a, i, j, *conds):
+        self[a][i].append((j,conds))
+
+    def set_initial_state(self, state):
+        self.initial_state = state[:]
+
+    def __str__(self):
+
+        def str_state(state):
+            if type(state) == int:
+                return str(state)
+            else:
+                return "\"%s\"" % state
+
+        s = "(* automata *)\n"
+        for a in sorted(self.keys()):
+            comment = ""
+            if a in self.comments:
+                comment = "\t(* %s *)" % self.comments[a]
+            s += "\"%s\"\t[%s]%s\n" % \
+                (a, ", ".join(map(str_state, self.states[a])),comment)
+        s += "\n"
+        s += "(* transitions *)\n\n"
+        for a in sorted(self.keys()):
+            has_one = False
+            for i in sorted(self[a]):
+                for (j, conds) in sorted(self[a][i]):
+                    sv = " and ".join(["\"%s\"=%s" % (b,str_state(k)) 
+                                for (b,k) in sorted(conds)])
+                    if sv:
+                        sv = " when %s" % sv
+                    s += "\"%s\" %s -> %s%s\n" % (a, str_state(i), str_state(j), sv)
+                    has_one = True
+            if has_one:
+                s += "\n"
+
+        if self.initial_state:
+            s += "initial_state %s" % ", ".join(["\"%s\"=%s" % (a,str_state(i))\
+                                for (a,i) in self.initial_state])
+
+        return s
+
+
+def logic_from_entity(n):
+    if n.type in ENTITY_CLASSES:
+        dnf = DNF(AndClause(Lit(n)))
+    elif n.type == "and":
+        dnf = logic_from_entity(n.inputs[0])
+        for m in n.inputs[1:]:
+            dnf = dnf & logic_from_entity(m)
+    elif n.type == "or":
+        dnf = logic_from_entity(n.inputs[0])
+        for m in n.inputs[1:]:
+            dnf |= logic_from_entity(m)
+    elif n.type == "not":
+        pass
+    return dnf
+
+
+class ModulationLogic:
+    def __init__(self, modulations):
+        self.m_dnf = [] # independent modulations
+        self.necessary = DNF(AndClause()) # necessary
+        if not modulations:
+            self.pos = DNF(AndClause())
+            self.neg = self.pos.neg()
+        else:
+            for (cls, var) in modulations:
+                dnf = logic_from_entity(var)
+                if cls == "necessary stimulation":
+                    self.necessary = self.necessary & dnf
+                else:
+                    self.m_dnf.append((cls, dnf))
+            if not self.m_dnf: # only necessary stimulation
+                self.pos = self.necessary
+                self.neg = self.necessary.neg()
+            else:
+                self.pos = DNF()
+                self.neg = self.necessary.neg()
+                for (cls, dnf) in self.m_dnf:
+                    if cls in ["stimulation", "catalysis","modulation"]:
+                        self.pos |= dnf & self.necessary
+                        self.neg |= dnf.neg()
+                    if cls in ["inhibition", "modulation"]:
+                        self.pos |= dnf.neg() & self.necessary
+                        self.neg |= dnf
+
+class Story:
+    def __init__(self, sid):
+        self.sid = sid
+
+STORY_BOT = "null"
+
+def an_from_sbgnpd(model, do_conflicts=False, stories=None, initial_state=None,
+                    names_are_ids=False):
+    an = AN()
+
+    conflicts = {}
+
+    # 1. determine automata for entities
+
+    entities = set([e for e in model.entities.values() if not e.is_void()])
+
+    if names_are_ids:
+        def an_name(e):
+            return e.id
+    else:
+        def an_name(e):
+            return e.name
+
+    if stories:
+        story_name = [s[0] if s[0] is not None else "story%d" % (i+1) \
+                        for (i, s) in enumerate(stories)]
+        stories = [s[1] for s in stories]
+
+    e2story = {}
+    if stories:
+        for (i, story) in enumerate(stories):
+            for e in story:
+                e2story[e.id] = i
+            an.register_automaton(story_name[i], [STORY_BOT]+[an_name(e) for e in story])
+
+
+    done = set()
+    for e in model.entities.values():
+        if e.is_void():
+            continue
+        e = model.resolve_clone(e)
+        if e.id in done:
+            continue
+
+        if e.id not in e2story:
+            an.register_automaton(an_name(e), [0, 1], comment=repr(e))
+
+        if do_conflicts:
+            if len(e.consumers) > 1:
+                for p in e.consumers:
+                    if p.id not in conflicts:
+                        conflicts[p.id] = set()
+                    conflicts[p.id].update(e.consumers)
+
+        done.add(e.id)
+
+    # declare conflict between all the processes in a same story
+    if stories:
+        for story in stories:
+            procs = set()
+            for e in story:
+                procs.update(e.consumers)
+            for p in procs:
+                if p.id not in conflicts:
+                    conflicts[p.id] = set()
+                conflicts[p.id].update(procs)
+
+    # filter self-conflicts
+    for pid, ps in conflicts.items():
+        conflicts[pid] = set([p for p in ps if p.id != pid])
+
+    #print(conflicts, file=sys.stderr)
+
+    def local_states_of_entity(e, present=True):
+        if isinstance(e, Story) and not present:
+            return [(story_name[e.sid], STORY_BOT)]
+        elif e.id in e2story:
+            sid = e2story[e.id]
+            a = story_name[sid]
+            if present:
+                return [(a, an_name(e))]
+            else:
+                return [(a, an_name(f)) for f in stories[sid] if f.id != e.id] \
+                        + [(a, STORY_BOT)]
+        else:
+            return [(an_name(e), 1 if present else 0)]
+
+    def local_states_of_lit(l):
+        return local_states_of_entity(an_name(l), l.ispos)
+
+    def lconds_of_andclause(c):
+        maps = list(map(local_states_of_lit, c))
+        return itertools.product(*maps)
+
+    def register_transition(a, i, j, *andclause):
+        for conds in lconds_of_andclause(andclause):
+            m = dict(conds)
+            if a in m:
+                if m[a] != i:
+                    continue
+                del m[a]
+                conds = list(m.items())
+            an.register_transition(a, i, j, *conds)
+
+
+    # 2. determine transitions
+
+    for p in model.processes.values():
+        ml = ModulationLogic(p.modulations)
+
+        pconflicts = conflicts.get(p.id, set())
+
+        if not pconflicts and len(p.consumptions) == 0:
+            for e in p.productions:
+                a, j = local_states_of_entity(e)[0]
+                if e.id in e2story:
+                    i = STORY_BOT
+                else:
+                    i = 0
+                for conds in ml.pos:
+                    register_transition(a, i, j, *conds)
+        elif not pconflicts and len(p.productions) == 0 and len(p.consumptions) == 1:
+            e = p.consumptions[0]
+            a, i = local_states_of_entity(e)[0]
+            if e.id in e2story:
+                j = STORY_BOT
+            else:
+                j = 0
+            for conds in ml.pos:
+                register_transition(a, i, j, *conds)
+        else:
+
+            def group_per_stories(d, es):
+                for e in es:
+                    sid = e2story.get(e.id, None)
+                    if sid not in d:
+                        d[sid] = []
+                    d[sid].append(e)
+
+            consumptions = {}
+            productions = {}
+            group_per_stories(consumptions, p.consumptions)
+            group_per_stories(productions, p.productions)
+            pstories = set(productions.keys())
+            pstories.update(consumptions.keys())
+            if None in pstories:
+                pstories.remove(None)
+
+            for (sid, es) in consumptions.items():
+                if sid is None:
+                    continue
+                assert len(es) <= 1, \
+                    "invalid story %d: %s consumes %s" % (sid, p, es)
+            for (sid, es) in productions.items():
+                if sid is None:
+                    continue
+                assert len(es) <= len(consumptions.get(sid, [])), \
+                    "invalid story %s: %s produces more stories (%s -> %s)" \
+                            % (sid, p, consumptions.get(sid, []), es)
+
+            implicit_process = not pconflicts and len(consumptions) <= 1 and \
+                                len(productions) <= 1 and \
+                                None not in consumptions and None not in productions
+
+            if implicit_process:
+                p_pos = ml.pos
+            else:
+                an.register_automaton(an_name(p), [0, 1], comment=repr(p))
+
+                necessary_clause = AndClause()
+                for e in p.consumptions:
+                    necessary_clause.add(Lit(e))
+                for c in pconflicts:
+                    if c.id == p.id:
+                        continue
+                    necessary_clause.add(Lit(c, False))
+
+                # process activation
+                for conds in ml.pos:
+                    conds = conds.copy()
+                    conds &= necessary_clause
+                    register_transition(an_name(p), 0, 1, *conds)
+
+                p_pos = DNF(AndClause(Lit(p)))
+
+            # productions
+            cond_production_done = AndClause()
+            for e in productions.get(None, []):
+                for conds in p_pos:
+                    register_transition(an_name(e), 0, 1, *conds)
+                cond_production_done.add(Lit(e))
+            if not consumptions:
+                for (sid, es) in productions.items():
+                    if sid is None:
+                        continue
+                    e = es[0]
+                    a, j = local_states_of_entity(e)[0]
+                    for conds in p_pos:
+                        register_transition(a, STORY_BOT, j, *conds)
+
+            def story_next_lit(sid):
+                if sid in productions:
+                    e = productions[sid][0]
+                    state = True
+                else:
+                    e = Story(sid)
+                    state = False
+                return Lit(e, state)
+
+            # process de-activation
+            if not implicit_process:
+                # process inhibition
+                done = cond_production_done
+                for sid in pstories:
+                    done.add(story_next_lit(sid))
+                register_transition(an_name(p), 1, 0, *done)
+                done = DNF(done)
+            else:
+                done = DNF(AndClause())
+
+            # consumptions
+            for (sid, es) in consumptions.items():
+                if sid is None:
+                    for e in es:
+                        for conds in p_pos & done:
+                        #for conds in stories_around & p_pos:
+                            register_transition(an_name(e), 1, 0, *conds)
+                else:
+                    e = es[0]
+                    a, i = local_states_of_entity(es[0])[0]
+                    if sid in productions:
+                        b, j = local_states_of_entity(productions[sid][0])[0]
+                    else:
+                        j = STORY_BOT
+                    for conds in p_pos:
+                        register_transition(a, i, j, *conds)
+
+
+    # 3. set initial state
+    if initial_state:
+        initial_state = [local_states_of_entity(e)[0] for e in initial_state]
+        an.set_initial_state(initial_state)
+
+    return an
+
+
+def parse_gid_list(model, s):
+    gs = []
+    for gid in s.split(","):
+        gid = gid.strip()
+        g = model.entities[gid]
+        g = model.resolve_clone(g)
+        gs.append(g)
+    return gs
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("inputs", type=str, nargs='+')
+    parser.add_argument("--output", "-o")
+    parser.add_argument("--conflicts", action="store_true",
+        help="declare processes with shared reactants in conflict")
+    parser.add_argument("--story", action="append",
+        help="comma-separated list of glyph ids, possibly prefixed with name=")
+    parser.add_argument("--initial-state",
+        help="comma-seperated list of glyph ids present in the initial state")
+    parser.add_argument("--names-are-ids", action="store_true",
+        help="use glyph id as automata name")
+
+    args = parser.parse_args()
+
+    models = [parse_sbgn_pd(sbgn) for sbgn in args.inputs]
+    model = merge_sbgn_pd(models)
+
+    def parse_story_spec(model, data):
+        if "=" in data:
+            name, data = data.split("=")
+            name = name.strip()
+            data = data.strip()
+        else:
+            name = None
+        return (name, parse_gid_list(model, data))
+
+    stories = None
+    if args.story:
+        stories = [parse_story_spec(model, s) for s in args.story]
+    initial_state = None
+    if args.initial_state:
+        initial_state = parse_gid_list(model, args.initial_state)
+
+    an = an_from_sbgnpd(model, do_conflicts=args.conflicts, stories=stories,
+                        initial_state=initial_state, names_are_ids=args.names_are_ids)
+
+    if args.output:
+        open(args.output, "w").write(str(an))
+    else:
+        print(str(an))
+
+

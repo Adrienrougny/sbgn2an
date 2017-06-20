@@ -6,4 +6,7 @@ setup(name='sbgn2an',
       author="Adrien Rougny, Loïc Paulevé",
       author_email="rougny.adrien@aist.go.jp, loic.pauleve@lri.fr",
       packages=['sbgn2an'],
+      scripts = [
+        "scripts/sbgnpd2an",
+      ],
      )

@@ -1,4 +1,10 @@
-import gringo
+
+# Backward compatibility with gringo 4.x
+try:
+    import clingo
+except:
+    import gringo
+
 import sbgn2an.config
 import csbgnpy.pd
 
