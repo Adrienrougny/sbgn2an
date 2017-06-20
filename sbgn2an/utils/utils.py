@@ -1,7 +1,7 @@
 
 # Backward compatibility with gringo 4.x
 try:
-    import clingo
+    import clingo as gringo
 except:
     import gringo
 
