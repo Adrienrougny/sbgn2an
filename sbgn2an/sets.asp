@@ -1,36 +1,24 @@
-#show gather/3.
+#show incompat/2.
 
-%epn(node_id) an EPN with node id node_id 
-%belong(label,node_id) EPN node_id contains the label label 
-%edge(node_id1,node_id2,edge_id) the process edge_id consumes the EPN node_id1 and produces the EPN node_id2
-%gather(node_id1,node_id2,edge_id) the EPNs node_id1 and node_id2 belong to the same story
+#program base.
 
-hasLabel(X):-labeled(X,L).
-inStory(X):-gather(X,Y).
-inStory(X):-gather(Y,X).
+process(P):-edge(X,Y,P).
 
-%constraint (i) and (ii) + story generator
-%we gather together two epns linked by a process, or not
+belong_in(P,X,S):-inStory(X,S);inStory(Y,S);edge(X,Y,P).
+belong_out(P,X,S):-inStory(X,S);inStory(Y,S);edge(Y,X,P).
 
-0 {gather(X,Y,E)} 1:-edge(X,Y,E);epn(X);epn(Y);X!=Y.
+incompat(S1,S2):-story(S1);story(S2);S1!=S2;inStory(X,S1):inStory(X,S2).
 
-%constraint (ii)
-% if an EPN of the story is a product of a process, then at least one reactant of that process belongs to the story
+incompat(S2,S1):-incompat(S1,S2).
+incompat(S1,S2):-story(S1);story(S2);inStory(X,S1);inStory(X,S2);process(P1);process(P2);belong_in(P1,X,S1);not belong_in(P1,X,S2);belong_in(P2,X,S2);not belong_in(P2,X,S1).
 
-%constraint (iii)
-%for two EPNs of the story, there exist no process that consumes both of them
 
-:-edge(Z,X,E);edge(Y,X,E);gather(Y,Z,_);Z!=Y.
 
-%constraint (iv)
-%for two EPNs of the story, there exist no process that produces both of them
+#program sets.
 
-:-edge(X,Z,E);edge(X,Y,E);gather(Y,Z,_);Z!=Y.
+0 {inSet(S)} 1:-story(S).
+:-story(S1);story(S2);inSet(S1);inSet(S2);incompat(S1,S2).
 
-%constraint (v)
-%1 {cand(L,X):labeled(X,L)} 1:-hasLabel(X);epn(X).
-%sameLabel(X,Y):-cand(L,Y);cand(L,X);epn(X);epn(Y);X!=Y.
-%:-not sameLabel(X,Y);gather(X,Y);epn(X);epn(Y);X!=Y.
+#program max_incl.
 
-c5(X):-labeled(Y,L):gather(X,Y);labeled(X,L);gather(X,_);labeled(_,L).
-:-not c5(X);gather(X,_).
+:-story(S1);not inSet(S1);not incompat(S2,S1):inSet(S2).

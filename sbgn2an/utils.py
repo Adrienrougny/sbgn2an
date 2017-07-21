@@ -33,6 +33,14 @@ def cg2asp(net):
                         l.append("edge({0},{1},{2}).".format(reactant.id, product.id, process.id))
     return l
 
+def stories2asp(stories):
+    l = []
+    for i, story in enumerate(stories):
+        l.append("story({}).".format(i))
+        for e in story:
+            l.append("inStory({},{}).".format(e.id, i))
+    return l
+
 class SeedsControl(object):
     def __init__(self, net, n = 0):
         self.net = net

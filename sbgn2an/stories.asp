@@ -3,6 +3,7 @@
 #show inStory/1.
 
 #program base.
+
 label(L):-labeled(X,L).
 isProduced(X):-edge(Y,X,E);epn(X).
 isConsumed(X):-edge(X,Z,E);epn(X).
@@ -12,10 +13,11 @@ isConsumed(X):-edge(X,Z,E);epn(X).
 
 %constraint (i)
 
-path(Y,X):-path(X,Y).
-path(X,Y):-edge(X,Y,_).
-path(X,Z):-path(X,Y);path(Y,Z).
-:-X!=Y;inStory(X);inStory(Y);not path(X,Y).
+c1(Y,X):-c1(X,Y).
+c1(X,Y):-epn(X);epn(Y);inStory(X);inStory(Y);edge(X,Y,_).
+c1(X,Z):-epn(X);epn(Y);epn(Z);c1(X,Y);inStory(Z);edge(Y,Z,_).
+c1(X,Z):-epn(X);epn(Y);epn(Z);c1(X,Y);inStory(Z);edge(Z,Y,_).
+:-not c1(X,Y);X!=Y;inStory(X);inStory(Y);epn(X);epn(Y).
 
 %constraint (ii)
 
