@@ -32,7 +32,7 @@ class StoriesControl(object):
     def __init__(self, net):
         self.net = net
 
-    def solve(self, on_story = None, same_labels = False, n = 0):
+    def solve(self, on_story = None, same_labels = False, only_max = False, n = 0):
         asp = sbgn2an.utils.cg2asp(self.net)
         ctrl = gringo.Control()
         ctrl.configuration.solve.models = n
@@ -42,6 +42,8 @@ class StoriesControl(object):
         ctrl.ground([("base", [])])
         if same_labels:
             ctrl.ground([("same_labels", [])])
+        if only_max:
+            ctrl.ground([("max_incl", [])])
         self.on_story = on_story
         res = ctrl.solve(on_model = self._on_model)
 
@@ -73,21 +75,23 @@ def get_stories(net, same_labels = False, only_max = False, n = 0):
         n = 0
     stories = set()
     def on_story(story):
-        add = True
-        to_remove = []
-        if not only_max:
-            stories.add(story)
-        else:
-            for story2 in stories:
-                if story2.issuperset(story):
-                    add = False
-                    break
-                elif story2.issubset(story):
-                    to_remove.append(story2)
-        for story2 in to_remove:
-            stories.remove(story2)
-        if add:
-            stories.add(story)
+        stories.add(story)
+    # def on_story(story):
+    #     add = True
+    #     to_remove = []
+    #     if not only_max:
+    #         stories.add(story)
+    #     else:
+    #         for story2 in stories:
+    #             if story2.issuperset(story):
+    #                 add = False
+    #                 break
+    #             elif story2.issubset(story):
+    #                 to_remove.append(story2)
+    #     for story2 in to_remove:
+    #         stories.remove(story2)
+    #     if add:
+    #         stories.add(story)
     ctrl = StoriesControl(net)
-    ctrl.solve(on_story, same_labels, n)
+    ctrl.solve(on_story, same_labels, only_max, n)
     return stories
