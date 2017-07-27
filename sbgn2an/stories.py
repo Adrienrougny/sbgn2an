@@ -34,7 +34,7 @@ class StoriesControl(object):
 
     def solve(self, on_story = None, same_labels = False, only_max = False, n = 0):
         asp = sbgn2an.utils.cg2asp(self.net)
-        ctrl = gringo.Control()
+        ctrl = gringo.Control(["--warn=none"])
         ctrl.configuration.solve.models = n
         ctrl.load(sbgn2an.config.STORIES_FILE)
         for rule in asp:
