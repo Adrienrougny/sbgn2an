@@ -1,7 +1,6 @@
 #!/bin/python
 import sbgn2an.utils
 
-
 import time
 import argparse
 import csbgnpy.pd.sbgnmlio
@@ -29,7 +28,7 @@ for key in opts.keys():
 print("######################################################################################")
 print("Building network from file...")
 start = time.time()
-net = csbgnpy.pd.sbgnmlio.read_sbgnml(args.input)
+net = csbgnpy.pd.sbgnmlio.read(args.input)
 end = time.time()
 print("Built network in {} seconds".format(end-start))
 print("Enumerating stories...")
