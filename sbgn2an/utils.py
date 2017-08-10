@@ -1,3 +1,4 @@
+import networkx
 # Backward compatibility with gringo 4.x
 try:
     import clingo as gringo
@@ -32,6 +33,28 @@ def cg2asp(net):
                     # if not net.isSink(product):
                         l.append("edge({0},{1},{2}).".format(reactant.id, product.id, process.id))
     return l
+
+def get_sccs(net):
+    g = networkx.DiGraph()
+    for process in net.processes:
+        for reactant in set(process.reactants):
+            g.add_edge(reactant, process)
+        for product in set(process.products):
+            g.add_edge(process, product)
+    sccs = networkx.strongly_connected_components(g)
+    return sccs
+
+def get_sources(net):
+    sources = set()
+    for e in net.entities:
+        issource = True
+        for process in net.processes:
+            if e in process.products:
+                issource = False
+                break
+        if issource:
+            sources.add(e)
+    return sources
 
 def stories2asp(stories):
     l = []
