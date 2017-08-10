@@ -3,8 +3,8 @@
 
 import itertools
 
-from sbgn2an.utils.sbgnlib import *
-from sbgn2an.utils.dnf import *
+from sbgn2an.sbgnlib import *
+from sbgn2an.dnf import *
 
 class AN(dict):
     def __init__(self):
