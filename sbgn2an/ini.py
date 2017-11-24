@@ -1,4 +1,5 @@
 from csbgnpy.pd.process import Process
+from csbgnpy.pd.modulation import Inhibition
 
 import networkx
 
@@ -36,6 +37,14 @@ class IniControl(object):
         sccs = sbgn2an.utils.get_sccs(self.net)
         for scc in sccs:
             if len(scc) > 1:
+                tochoose = False
+
+
+
+
+
+
+
                 choices = [list(set(node.reactants)) for node in scc if isinstance(node, Process)]
                 for choice in choices:
                     toadd = False
