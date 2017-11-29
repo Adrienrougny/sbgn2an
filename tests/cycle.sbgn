@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sbgn xmlns="http://sbgn.org/libsbgn/0.2">
+    <map language="process description">
+        <glyph id="glyph1" class="unspecified entity">
+            <label text="A"/>
+            <bbox y="40.0" x="46.0" h="60.0" w="108.0"/>
+        </glyph>
+        <glyph id="glyph5" class="process">
+            <bbox y="108.0" x="228.0" h="24.0" w="24.0"/>
+            <port y="120.0" x="216.0" id="glyph5.1"/>
+            <port y="120.0" x="264.0" id="glyph5.2"/>
+        </glyph>
+        <glyph id="glyph2" class="unspecified entity">
+            <label text="C"/>
+            <bbox y="95.0" x="316.0" h="60.0" w="108.0"/>
+        </glyph>
+        <glyph id="glyph6" class="process">
+            <bbox y="188.0" x="478.0" h="24.0" w="24.0"/>
+            <port y="200.0" x="466.0" id="glyph6.1"/>
+            <port y="200.0" x="514.0" id="glyph6.2"/>
+        </glyph>
+        <glyph id="glyph4" class="unspecified entity">
+            <label text="D"/>
+            <bbox y="260.0" x="531.0" h="60.0" w="108.0"/>
+        </glyph>
+        <glyph id="glyph7" class="process">
+            <bbox y="258.0" x="278.0" h="24.0" w="24.0"/>
+            <port y="270.0" x="314.0" id="glyph7.2"/>
+            <port y="270.0" x="266.0" id="glyph7.1"/>
+        </glyph>
+        <glyph id="glyph3" class="unspecified entity">
+            <label text="B"/>
+            <bbox y="145.0" x="46.0" h="60.0" w="108.0"/>
+        </glyph>
+        <glyph id="glyph10" class="process">
+            <bbox y="478.0" x="248.0" h="24.0" w="24.0"/>
+            <port y="490.0" x="236.0" id="glyph10.1"/>
+            <port y="490.0" x="284.0" id="glyph10.2"/>
+        </glyph>
+        <glyph id="glyph8" class="unspecified entity">
+            <label text="F"/>
+            <bbox y="480.0" x="326.0" h="60.0" w="108.0"/>
+        </glyph>
+        <glyph id="glyph11" class="process">
+            <bbox y="528.0" x="238.0" h="24.0" w="24.0"/>
+            <port y="540.0" x="274.0" id="glyph11.2"/>
+            <port y="540.0" x="226.0" id="glyph11.1"/>
+        </glyph>
+        <glyph id="glyph9" class="unspecified entity">
+            <label text="E"/>
+            <bbox y="460.0" x="66.0" h="60.0" w="108.0"/>
+        </glyph>
+        <glyph id="glyph12" class="unspecified entity">
+            <label text="G"/>
+            <bbox y="690.0" x="76.0" h="60.0" w="108.0"/>
+        </glyph>
+        <glyph id="glyph14" class="process">
+            <bbox y="718.0" x="238.0" h="24.0" w="24.0"/>
+            <port y="730.0" x="226.0" id="glyph14.1"/>
+            <port y="730.0" x="274.0" id="glyph14.2"/>
+        </glyph>
+        <glyph id="glyph13" class="unspecified entity">
+            <label text="H"/>
+            <bbox y="680.0" x="396.0" h="60.0" w="108.0"/>
+        </glyph>
+        <arc target="glyph5.1" source="glyph1" id="arc1" class="consumption">
+            <start y="93.27586" x="154.0"/>
+            <end y="120.0" x="216.0"/>
+        </arc>
+        <arc target="glyph5.1" source="glyph3" id="arc2" class="consumption">
+            <start y="149.39655" x="154.0"/>
+            <end y="120.0" x="216.0"/>
+        </arc>
+        <arc target="glyph2" source="glyph5.2" id="arc3" class="production">
+            <start y="120.0" x="264.0"/>
+            <end y="122.92308" x="316.0"/>
+        </arc>
+        <arc target="glyph6.1" source="glyph2" id="arc4" class="consumption">
+            <start y="155.0" x="408.4"/>
+            <end y="200.0" x="466.0"/>
+        </arc>
+        <arc target="glyph4" source="glyph6.2" id="arc5" class="production">
+            <start y="200.0" x="514.0"/>
+            <end y="260.0" x="553.3333"/>
+        </arc>
+        <arc target="glyph7.2" source="glyph4" id="arc6" class="consumption">
+            <start y="286.01477" x="531.0"/>
+            <end y="270.0" x="314.0"/>
+        </arc>
+        <arc target="glyph3" source="glyph7.1" id="arc7" class="production">
+            <start y="270.0" x="266.0"/>
+            <end y="202.0" x="154.0"/>
+        </arc>
+        <arc target="glyph10.1" source="glyph9" id="arc8" class="consumption">
+            <start y="490.0" x="174.0"/>
+            <end y="490.0" x="236.0"/>
+        </arc>
+        <arc target="glyph8" source="glyph10.2" id="arc9" class="production">
+            <start y="490.0" x="284.0"/>
+            <end y="501.0" x="326.0"/>
+        </arc>
+        <arc target="glyph11.2" source="glyph8" id="arc10" class="consumption">
+            <start y="525.283" x="326.0"/>
+            <end y="540.0" x="274.0"/>
+        </arc>
+        <arc target="glyph9" source="glyph11.1" id="arc11" class="production">
+            <start y="540.0" x="226.0"/>
+            <end y="510.76923" x="174.0"/>
+        </arc>
+        <arc target="glyph14.1" source="glyph12" id="arc12" class="consumption">
+            <start y="725.625" x="184.0"/>
+            <end y="730.0" x="226.0"/>
+        </arc>
+        <arc target="glyph13" source="glyph14.2" id="arc13" class="production">
+            <start y="730.0" x="274.0"/>
+            <end y="715.4" x="396.0"/>
+        </arc>
+    </map>
+</sbgn>
