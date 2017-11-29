@@ -29,7 +29,7 @@ def cg2asp(net):
         products = process.products
         for reactant in reactants:
                 for product in products:
-                    if not isinstance(reactant, csbgnpy.pd.entity.EmptySet) and not isinstance(product, csbgnpy.pd.EmptySet):
+                    if not isinstance(reactant, csbgnpy.pd.entity.EmptySet) and not isinstance(product, csbgnpy.pd.entity.EmptySet):
                     # if not net.isSink(product):
                         l.append("edge({0},{1},{2}).".format(reactant.id, product.id, process.id))
     return l
