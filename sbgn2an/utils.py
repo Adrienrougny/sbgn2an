@@ -13,7 +13,7 @@ import csbgnpy.pd
 def _quote_string(s):
     return '"{0}"'.format(s)
 
-def cg2asp(net):
+def cg2asp(net, empty_sets = False):
     l = []
     for entity in net.entities:
         if not isinstance(entity, csbgnpy.pd.entity.EmptySet):
@@ -29,9 +29,11 @@ def cg2asp(net):
         products = process.products
         for reactant in reactants:
                 for product in products:
-                    if not isinstance(reactant, csbgnpy.pd.entity.EmptySet) and not isinstance(product, csbgnpy.pd.entity.EmptySet):
-                    # if not net.isSink(product):
-                        l.append("edge({0},{1},{2}).".format(reactant.id, product.id, process.id))
+                    if not empty_sets:
+                        if not isinstance(reactant, csbgnpy.pd.entity.EmptySet) and not isinstance(product, csbgnpy.pd.entity.EmptySet):
+                            l.append("edge({0},{1},{2}).".format(reactant.id, product.id, process.id))
+                    else:
+                            l.append("edge({0},{1},{2}).".format(reactant.id, product.id, process.id))
     return l
 
 def get_sccs(net):
@@ -69,7 +71,7 @@ class SeedsControl(object):
         self.net = net
 
     def solve(self, on_seed = None, n = 0):
-        asp = sbgn2an.utils.cg2asp(self.net)
+        asp = sbgn2an.utils.cg2asp(self.net, empty_sets = True)
         ctrl = gringo.Control()
         ctrl.configuration.solve.models = n
         ctrl.load(sbgn2an.config.SEEDS_FILE)
