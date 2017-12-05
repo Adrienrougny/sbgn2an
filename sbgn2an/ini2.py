@@ -1,14 +1,18 @@
+import os
+
 import clingo
 
 import csbgnpy.pd.io.sbgnml
 import csbgnpy.pd.io.sbgnlog
 import sbgn2an.stories
+import sbgn2an.config
 
 def get_ini(net, stories = None):
-    ctrl = clingo.Control(["--warn=none", "-n 0", "--opt-mode=opt"])
+    # ctrl = clingo.Control(["--warn=none", "-n 0", "--opt-mode=opt"])
+    ctrl = clingo.Control(["--warn=none", "-n 0"])
     # ctrl = clingo.Control(["-n 0"])
-    ctrl.load(os.path.join(os.getcwd(), "ini.lp"))
-    ctrl.load(os.path.join(os.getcwd(), "pd.lp"))
+    ctrl.load(sbgn2an.config.INI_FILE)
+    ctrl.load(sbgn2an.config.PD_ONTO_FILE)
     atoms = csbgnpy.pd.io.sbgnlog.network_to_atoms(net, use_ids = True)
     for atom in atoms:
         ctrl.add("base", [], str(atom) + '.')
@@ -21,5 +25,6 @@ def get_ini(net, stories = None):
 
     models = []
     def on_model(model):
-        models.append([atom.split('(')[1][:-1] for atom in model.symbols(shown=True)])
+        models.append([str(atom).split('(')[1][:-1] for atom in model.symbols(shown=True)])
+    ctrl.solve(on_model = on_model)
     return models
