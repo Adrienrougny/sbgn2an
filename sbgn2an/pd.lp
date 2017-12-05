@@ -13,6 +13,7 @@ epn_pd(E):-simpleChemical_pd(E).
 epn_pd(E):-nucleicAcidFeature_pd(E).
 epn_pd(E):-perturbation_pd(E).
 epn_pd(E):-complex_pd(E).
+epn_pd(E):-emptySet_pd(E).
 
 subEntity_pd(E):-subMacromolecule_pd(E).
 subEntity_pd(E):-subUnspecifiedEntity_pd(E).
