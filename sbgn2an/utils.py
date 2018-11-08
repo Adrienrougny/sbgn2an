@@ -18,12 +18,24 @@ def cg2asp(net, empty_sets = False):
     for entity in net.entities:
         if not isinstance(entity, csbgnpy.pd.entity.EmptySet):
             l.append("epn({0}).".format(entity.id))
+            if isinstance(entity, csbgnpy.pd.entity.Complex):
+                l.append("complex({0}).".format(entity.id))
             if hasattr(entity, "label"):
                 l.append("labeled({0}, {1}).".format(entity.id, _quote_string(entity.label)))
             if hasattr(entity, "components"):
                 for subentity in entity.components:
                     if hasattr(subentity, "label"):
                         l.append("labeled({0}, {1}).".format(entity.id, _quote_string(subentity.label)))
+            if hasattr(entity, "svs"):
+                for sv in entity.svs:
+                    val = sv.val
+                    var = sv.var
+                    if val is None:
+                        val = "unset"
+                    else:
+                        val = _quote_string(val)
+                    var = _quote_string(str(var))
+                    l.append("sv({},{},{}).".format(entity.id, val, var))
     for process in net.processes:
         reactants = process.reactants
         products = process.products
