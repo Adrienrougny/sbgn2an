@@ -15,16 +15,18 @@ class Story(frozenset):
 
     def get_labels(self):
         labels = []
-        d = defaultdict(set)
+        d = defaultdict(int)
         for e in self:
+            done = []
             if hasattr(e, "label"):
-                d[e.label].add(e)
+                d[e.label] += 1
             if hasattr(e, "components"):
                 for sube in e.components:
-                    if hasattr(sube, "label"):
-                        d[sube.label].add(e)
+                    if hasattr(sube, "label") and sube.label not in done:
+                        d[sube.label] += 1
+                        done.append(sube.label)
         for label in d.keys():
-            if d[label] == self:
+            if d[label] == len(self):
                 labels.append(label)
         return labels
 

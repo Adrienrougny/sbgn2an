@@ -1,99 +1,33 @@
-from csbgnpy.pd.process import Process
-from csbgnpy.pd.modulation import Inhibition
+import os
 
-import networkx
+import clingo
 
-try:
-    import clingo as gringo
-    gringo_v = 5
-except:
-    import gringo
-    gringo_v = 4
-
+import csbgnpy.pd.io.sbgnml
+import sbgn2an.stories
 import sbgn2an.config
 
-class IniControl(object):
-    def __init__(self, net, rem_inhib = True):
-        self.net = net
-        self.rem_inhib = rem_inhib
-        self._initialize()
+def get_ini(net, in_ini = None, stories = None):
+    ctrl = clingo.Control(["--warn=none", "-n 0", "--opt-mode=optN"])
+    # ctrl = clingo.Control(["--warn=none", "-n 0"])
+    # ctrl = clingo.Control(["-n 0"])
+    ctrl.load(sbgn2an.config.INI_FILE)
+    atoms = sbgn2an.utils.cg2asp(net, empty_sets = True)
+    for atom in atoms:
+        ctrl.add("base", [], atom)
+    if in_ini:
+        for e in in_ini:
+            ctrl.add("base", [], "inIni({}).".format(e.id))
+    if stories:
+        for i, story in enumerate(stories):
+            for e in story:
+                ctrl.add("base", [], "inStory({},{}).".format(e.id, i))
+    ctrl.ground([("base", [])])
 
-    def _initialize(self):
-        self.all_choices = []
-        ini = sbgn2an.utils.get_sources(self.net)
-        if self.rem_inhib:
-            toremove = set()
-            for e in ini:
-                isinhib = False
-                for m in self.net.modulations:
-                    if isinstance(m, Inhibition) and m.source == e:
-                        isinhib = True
-                        break
-                if isinhib:
-                    toremove.add(e)
-            for e in toremove:
-                ini.remove(e)
-        self.ini = ini
-        sccs = sbgn2an.utils.get_sccs(self.net)
-        for scc in sccs:
-            if len(scc) > 1:
-                tochoose = False
+    models = []
 
+    def on_model(model):
+        if model.optimality_proven:
+            models.append([net.get_entity(str(atom).split('(')[1][:-1], by_id = True) for atom in model.symbols(shown=True)])
 
-
-
-
-
-
-                choices = [list(set(node.reactants)) for node in scc if isinstance(node, Process)]
-                for choice in choices:
-                    toadd = False
-                    for e in ini:
-                        if e in choice:
-                            toadd = True
-                            break
-                    if toadd:
-                        for e in choice:
-                            self.ini.add(e)
-                        break
-                if not toadd:
-                    self.all_choices.append(choices)
-
-    def reset(self):
-        self._initialize()
-
-    def select(self, choice):
-        toremove = []
-        for choices in self.all_choices:
-            rem = False
-            for choice2 in choices:
-                toadd = False
-                for e in choice:
-                    if e in choice2:
-                        toadd = True
-                        rem = True
-                        break
-                if toadd:
-                    for e in choice2:
-                        self.ini.add(e)
-            if rem:
-                toremove.append(choices)
-        for choices in toremove:
-            self.all_choices.remove(choices)
-        for e in choice:
-            self.ini.add(e)
-
-    def get_next_choice(self):
-        if self.all_choices:
-            return self.all_choices[0]
-        return None
-
-    def ui(self):
-        while self.get_next_choice():
-            choices = self.get_next_choice()
-            for i, choice in enumerate(choices):
-                print("{}: {}".format(i, choice))
-            j = int(input("Choice: "))
-            self.select(choices[j])
-        print(self.ini)
-
+    ctrl.solve(on_model = on_model)
+    return models

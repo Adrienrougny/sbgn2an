@@ -40,12 +40,20 @@ def cg2asp(net, empty_sets = False):
         reactants = process.reactants
         products = process.products
         for reactant in reactants:
-                for product in products:
-                    if not empty_sets:
-                        if not isinstance(reactant, csbgnpy.pd.entity.EmptySet) and not isinstance(product, csbgnpy.pd.entity.EmptySet):
-                            l.append("edge({0},{1},{2}).".format(reactant.id, product.id, process.id))
-                    else:
-                            l.append("edge({0},{1},{2}).".format(reactant.id, product.id, process.id))
+            if isinstance(reactant, csbgnpy.pd.entity.EmptySet):
+                reactant = "emptyset"
+            else:
+                reactant = reactant.id
+            for product in products:
+                if isinstance(product, csbgnpy.pd.entity.EmptySet):
+                    product = "emptyset"
+                else:
+                    product = product.id
+                if not empty_sets:
+                    if not isinstance(reactant, csbgnpy.pd.entity.EmptySet) and not isinstance(product, csbgnpy.pd.entity.EmptySet):
+                        l.append("edge({0},{1},{2}).".format(reactant, product, process.id))
+                else:
+                    l.append("edge({0},{1},{2}).".format(reactant, product, process.id))
     return l
 
 def get_sccs(net):
