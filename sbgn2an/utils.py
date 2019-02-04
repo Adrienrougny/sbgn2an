@@ -50,7 +50,7 @@ def cg2asp(net, empty_sets = False):
                 else:
                     product = product.id
                 if not empty_sets:
-                    if not isinstance(reactant, csbgnpy.pd.entity.EmptySet) and not isinstance(product, csbgnpy.pd.entity.EmptySet):
+                    if product != "emptyset" and reactant != "emptyset":
                         l.append("edge({0},{1},{2}).".format(reactant, product, process.id))
                 else:
                     l.append("edge({0},{1},{2}).".format(reactant, product, process.id))
