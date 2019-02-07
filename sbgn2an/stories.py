@@ -72,12 +72,16 @@ class StoriesControl(object):
         story = Story(story)
         return story
 
-def get_stories(net, same_labels = False, only_max = False, n = 0):
+def get_stories(net, same_labels = False, only_max = False, allow_singletons = False, n = 0):
     if only_max:
         n = 0
     stories = set()
     def on_story(story):
-        stories.add(story)
+        if not allow_singletons:
+            if len(story) > 1:
+                stories.add(story)
+        else:
+            stories.add(story)
     # def on_story(story):
     #     add = True
     #     to_remove = []
