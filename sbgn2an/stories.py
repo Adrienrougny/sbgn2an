@@ -9,7 +9,7 @@ except:
 
 import sbgn2an.config
 
-class Story(frozenset):
+class Story(list):
     def __str__(self):
         return "{{{}}}".format(','.join([str(e.id) for e in list(self)]))
 
@@ -75,13 +75,14 @@ class StoriesControl(object):
 def get_stories(net, same_labels = False, only_max = False, allow_singletons = False, n = 0):
     if only_max:
         n = 0
-    stories = set()
+    stories = []
     def on_story(story):
         if not allow_singletons:
-            if len(story) > 1:
-                stories.add(story)
+            if len(story) > 1 and story not in stories:
+                stories.append(story)
         else:
-            stories.add(story)
+            if story not in stories:
+                stories.append(story)
     # def on_story(story):
     #     add = True
     #     to_remove = []
