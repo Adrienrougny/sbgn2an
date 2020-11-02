@@ -6,4 +6,5 @@ setup(name='sbgn2an',
       author="Adrien Rougny, Loïc Paulevé",
       author_email="adrienrougny@gmail.com, loic.pauleve@lri.fr",
       packages=['sbgn2an'],
+      package_data = {"sbgn2an": ["*.asp"]},
      )
